@@ -302,8 +302,9 @@ depend on the value of `gptel-org-branching-context', which see."
 
 (defun gptel-org--strip-elements ()
   "Remove all elements in `gptel-org-ignore-elements' from the prompt."
-  (let ((major-mode 'org-mode) element-markers)
-    (if (equal '(property-drawer) gptel-org-ignore-elements)
+  (when gptel-org-ignore-elements
+    (let ((major-mode 'org-mode) element-markers)
+      (if (equal '(property-drawer) gptel-org-ignore-elements)
         (save-excursion
           (goto-char (point-min))
           (while (re-search-forward org-property-drawer-re nil t)
@@ -314,18 +315,18 @@ depend on the value of `gptel-org-branching-context', which see."
 
             ;; Fast but inexact, can have false positives
             (delete-region (match-beginning 0) (match-end 0))))
-      ;; NOTE: Parsing the buffer is extremely slow.  Avoid this path unless
-      ;; required.
-      ;; NOTE: `org-element-map' takes a third KEEP-DEFERRED argument in newer
-      ;; Org versions
-      (org-element-map (org-element-parse-buffer 'element nil)
-          gptel-org-ignore-elements
-        (lambda (node)
-          (push (list (gptel-org--element-begin node)
-                      (gptel-org--element-end node))
-                element-markers)))
-      (dolist (bounds element-markers)
-        (apply #'delete-region bounds)))))
+        ;; NOTE: Parsing the buffer is extremely slow.  Avoid this path unless
+        ;; required.
+        ;; NOTE: `org-element-map' takes a third KEEP-DEFERRED argument in newer
+        ;; Org versions
+        (org-element-map (org-element-parse-buffer 'element nil)
+            gptel-org-ignore-elements
+          (lambda (node)
+            (push (list (gptel-org--element-begin node)
+                        (gptel-org--element-end node))
+                  element-markers)))
+        (dolist (bounds element-markers)
+          (apply #'delete-region bounds))))))
 
 (defun gptel-org--strip-block-headers ()
   "Remove all gptel-specific block headers and footers.
