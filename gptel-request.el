@@ -891,7 +891,7 @@ and \"apikey\" as USER."
   (cond
    ((numberp val) val)
    ((stringp val) (string-to-number val))
-   ((error "%S cannot be converted to a number" val))))
+   (t (error "%S cannot be converted to a number" val))))
 
 (defsubst gptel--to-string (s)
   "Convert S to a string, if possible."

@@ -92,7 +92,7 @@ of Org."
                   (throw :--first-match rtn)
                 (when rtn (push rtn acc))))
             (setq up (org-element-parent up)))
-          (nreverse acc)))))
+          (reverse acc)))))
   (if (fboundp 'org-element-begin)
       (progn (declare-function org-element-begin "org-element")
              (declare-function org-element-end "org-element")
@@ -302,8 +302,9 @@ depend on the value of `gptel-org-branching-context', which see."
 
 (defun gptel-org--strip-elements ()
   "Remove all elements in `gptel-org-ignore-elements' from the prompt."
-  (let ((major-mode 'org-mode) element-markers)
-    (if (equal '(property-drawer) gptel-org-ignore-elements)
+  (when gptel-org-ignore-elements
+    (let ((major-mode 'org-mode) element-markers)
+      (if (equal '(property-drawer) gptel-org-ignore-elements)
         (save-excursion
           (goto-char (point-min))
           (while (re-search-forward org-property-drawer-re nil t)
@@ -314,18 +315,18 @@ depend on the value of `gptel-org-branching-context', which see."
 
             ;; Fast but inexact, can have false positives
             (delete-region (match-beginning 0) (match-end 0))))
-      ;; NOTE: Parsing the buffer is extremely slow.  Avoid this path unless
-      ;; required.
-      ;; NOTE: `org-element-map' takes a third KEEP-DEFERRED argument in newer
-      ;; Org versions
-      (org-element-map (org-element-parse-buffer 'element nil)
-          gptel-org-ignore-elements
-        (lambda (node)
-          (push (list (gptel-org--element-begin node)
-                      (gptel-org--element-end node))
-                element-markers)))
-      (dolist (bounds element-markers)
-        (apply #'delete-region bounds)))))
+        ;; NOTE: Parsing the buffer is extremely slow.  Avoid this path unless
+        ;; required.
+        ;; NOTE: `org-element-map' takes a third KEEP-DEFERRED argument in newer
+        ;; Org versions
+        (org-element-map (org-element-parse-buffer 'element nil)
+            gptel-org-ignore-elements
+          (lambda (node)
+            (push (list (gptel-org--element-begin node)
+                        (gptel-org--element-end node))
+                  element-markers)))
+        (dolist (bounds element-markers)
+          (apply #'delete-region bounds))))))
 
 (defun gptel-org--strip-block-headers ()
   "Remove all gptel-specific block headers and footers.
@@ -457,7 +458,7 @@ for inclusion into the user prompt for the gptel request."
               (message "Ignoring unsupported binary file \"%s\"." path))))))
       (unless (= from-pt end)
         (push (list :text (buffer-substring-no-properties from-pt end)) parts)))
-    (nreverse parts)))
+    (reverse parts)))
 
 (defun gptel-org--annotate-links (beg end)
   "Annotate Org links whose sources will be sent with `gptel-send'.
