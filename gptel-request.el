@@ -2695,8 +2695,6 @@ INFO contains the request data, UUID is a unique identifier."
 (defun gptel-curl-get-response (fsm)
   "Fetch response to prompt in state FSM from the LLM using Curl.
 
-FSM is the state machine driving this request.
-
 FSM is the state machine driving this request.  Its INFO slot
 contains the data required for setting up the request.  INFO is a
 plist with the following keys, among others:
