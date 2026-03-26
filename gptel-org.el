@@ -83,7 +83,7 @@ of Org."
       (declare (indent 2))
       (setq fun (if (functionp fun) fun `(lambda (node) ,fun)))
       (let ((up (if with-self datum (org-element-parent datum)))
-	    acc rtn)
+	        acc rtn)
         (catch :--first-match
           (while up
             (when (or (not types) (org-element-type-p up types))
@@ -251,8 +251,8 @@ depend on the value of `gptel-org-branching-context', which see."
           (let* ((org-buf (current-buffer))
                  ;; Collect all heading start positions in the lineage
                  (full-bounds (gptel-org--element-lineage-map
-                                  (org-element-at-point) #'gptel-org--element-begin
-                                '(headline) 'with-self) )
+                               (org-element-at-point) #'gptel-org--element-begin
+                               '(headline) 'with-self) )
                  ;; lineage-map returns the full lineage in the unnarrowed
                  ;; buffer.  Remove heading start positions before (point-min)
                  ;; that are invalid due to narrowing, and add (point-min) if
@@ -295,7 +295,7 @@ depend on the value of `gptel-org-branching-context', which see."
           (when-let* ((gptel-org-ignore-elements ;not copied by -with-buffer-copy
                        (buffer-local-value 'gptel-org-ignore-elements
                                            org-buf)))
-                (gptel-org--strip-elements))
+            (gptel-org--strip-elements))
           (setq org-complex-heading-regexp ;For org-element-context to run
                 (buffer-local-value 'org-complex-heading-regexp org-buf))
           (current-buffer))))))
@@ -305,26 +305,26 @@ depend on the value of `gptel-org-branching-context', which see."
   (when gptel-org-ignore-elements
     (let ((major-mode 'org-mode) element-markers)
       (if (equal '(property-drawer) gptel-org-ignore-elements)
-        (save-excursion
-          (goto-char (point-min))
-          (while (re-search-forward org-property-drawer-re nil t)
-            ;; ;; Slower but accurate
-            ;; (let ((drawer (org-element-at-point)))
-            ;;   (when (org-element-type-p drawer 'property-drawer)
-            ;;     (delete-region (org-element-begin drawer) (org-element-end drawer))))
+          (save-excursion
+            (goto-char (point-min))
+            (while (re-search-forward org-property-drawer-re nil t)
+              ;; ;; Slower but accurate
+              ;; (let ((drawer (org-element-at-point)))
+              ;;   (when (org-element-type-p drawer 'property-drawer)
+              ;;     (delete-region (org-element-begin drawer) (org-element-end drawer))))
 
-            ;; Fast but inexact, can have false positives
-            (delete-region (match-beginning 0) (match-end 0))))
+              ;; Fast but inexact, can have false positives
+              (delete-region (match-beginning 0) (match-end 0))))
         ;; NOTE: Parsing the buffer is extremely slow.  Avoid this path unless
         ;; required.
         ;; NOTE: `org-element-map' takes a third KEEP-DEFERRED argument in newer
         ;; Org versions
         (org-element-map (org-element-parse-buffer 'element nil)
-            gptel-org-ignore-elements
-          (lambda (node)
-            (push (list (gptel-org--element-begin node)
-                        (gptel-org--element-end node))
-                  element-markers)))
+                         gptel-org-ignore-elements
+                         (lambda (node)
+                           (push (list (gptel-org--element-begin node)
+                                       (gptel-org--element-end node))
+                                 element-markers)))
         (dolist (bounds element-markers)
           (apply #'delete-region bounds))))))
 
@@ -389,13 +389,13 @@ Return a form (validp link-type path . REST), where REST is a list
 explaining why sending the link is not supported by gptel.  Only the
 first nil value in REST is guaranteed to be correct."
   (let ((mime))
-    (if-let* ((link-type (org-element-property :type link))
+    (if-let* ((link-type (and link (org-element-property :type link)))
               (resource-type
                (or (and (member link-type '("attachment" "file")) 'file)
                    (and (gptel--model-capable-p 'url)
                         (member link-type '("http" "https" "ftp")) 'url)))
-              (path (org-element-property :path link))
-              (user-check (funcall gptel-org-validate-link link))
+              (path (and link (org-element-property :path link)))
+              (user-check (and link (funcall gptel-org-validate-link link)))
               (readablep (or (eq resource-type 'url) (file-remote-p path)
                              (file-readable-p path)))
               (mime-valid
@@ -530,11 +530,11 @@ ARGS are the original function call arguments."
       (setq pos (point-min)))
     (pcase-let
         ((`(,preset ,system ,backend ,model ,temperature ,tokens ,num ,tools)
-           (mapcar
-            (lambda (prop) (org-entry-get pos prop 'selective))
-            '("GPTEL_PRESET" "GPTEL_SYSTEM" "GPTEL_BACKEND"
-              "GPTEL_MODEL" "GPTEL_TEMPERATURE" "GPTEL_MAX_TOKENS"
-              "GPTEL_NUM_MESSAGES_TO_SEND" "GPTEL_TOOLS"))))
+          (mapcar
+           (lambda (prop) (org-entry-get pos prop 'selective))
+           '("GPTEL_PRESET" "GPTEL_SYSTEM" "GPTEL_BACKEND"
+             "GPTEL_MODEL" "GPTEL_TEMPERATURE" "GPTEL_MAX_TOKENS"
+             "GPTEL_NUM_MESSAGES_TO_SEND" "GPTEL_TOOLS"))))
       (when preset (setq preset (gptel--intern preset)))
       (when (stringp system)
         (setq system (string-replace "\\n" "\n" system)))
@@ -878,7 +878,7 @@ cleaning up after."
           (if noop-p
               (buffer-substring (point) start-pt)
             (prog1 (buffer-substring (point) (point-max))
-                   (set-marker start-pt (point-max)))))))))
+              (set-marker start-pt (point-max)))))))))
 
 (provide 'gptel-org)
 ;;; gptel-org.el ends here
