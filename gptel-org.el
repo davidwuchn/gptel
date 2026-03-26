@@ -86,20 +86,22 @@ of Org."
 	        acc rtn)
         (catch :--first-match
           (while up
-            (when (or (not types) (org-element-type-p up types))
+            (when (or (not types) (gptel-org--element-type-p up types))
               (setq rtn (funcall fun up))
               (if (and first-match rtn)
                   (throw :--first-match rtn)
                 (when rtn (push rtn acc))))
-            (setq up (org-element-parent up)))
+            (setq up (gptel-org--element-parent up)))
           (reverse acc)))))
   (if (fboundp 'org-element-begin)
       (progn (declare-function org-element-begin "org-element")
              (declare-function org-element-end "org-element")
              (declare-function org-element-parent "org-element")
+             (declare-function org-element-type-p "org-element")
              (defalias 'gptel-org--element-begin 'org-element-begin)
              (defalias 'gptel-org--element-end 'org-element-end)
-             (defalias 'gptel-org--element-parent 'org-element-parent))
+             (defalias 'gptel-org--element-parent 'org-element-parent)
+             (defalias 'gptel-org--element-type-p 'org-element-type-p))
     (defsubst gptel-org--element-begin (node)
       "Get `:begin' property of NODE."
       (org-element-property :begin node))
@@ -108,7 +110,14 @@ of Org."
       (org-element-property :end node))
     (defsubst gptel-org--element-parent (node)
       "Return `:parent' property of NODE."
-      (org-element-property :parent node))))
+      (org-element-property :parent node))
+    (defsubst gptel-org--element-type-p (node types)
+      "Check if NODE type matches TYPES.
+TYPES can be a symbol or list of symbols."
+      (let ((node-type (car node)))
+        (if (listp types)
+            (memq node-type types)
+          (eq node-type types))))))
 
 
 ;;; User options
