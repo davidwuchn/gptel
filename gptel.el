@@ -2012,7 +2012,7 @@ USE-MINIBUFFER is non-nil)."
                         preview-handlers)
                 (push (gptel--format-tool-call (gptel-tool-name tool-spec) arg-values)
                       confirm-strings)))
-            (and confirm-strings (apply #'insert (nreverse confirm-strings)))
+            (and confirm-strings (apply #'insert (reverse confirm-strings)))
             (add-text-properties (overlay-end ov) (1- (point))
                                  '(read-only t font-lock-fontified t))
             (setq prompt-ov (make-overlay (overlay-end ov) (point) nil t))
@@ -2668,7 +2668,7 @@ NAME is the name of a preset, or a spec (plist) of the form
             (,bodyfun (lambda () (gptel--apply-preset ,name) ,@body))
             (,binds nil))
        (while ,syms (push (list (car ,syms) (pop ,syms)) ,binds))
-       (eval (list 'let (nreverse ,binds) (list 'funcall (list 'quote ,bodyfun)))))))
+       (eval (list 'let (reverse ,binds) (list 'funcall (list 'quote ,bodyfun)))))))
 
 (defun gptel--preset-mismatch-value (preset-spec key val)
   "Determine if the value of KEY in PRESET-SPEC matches VAL.
