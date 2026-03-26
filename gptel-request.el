@@ -832,7 +832,7 @@ when including context from these major modes.")
                  ;; (map-merge 'plist (symbol-plist name) props)
                  props)
            (push name models-processed)))))
-    (nreverse models-processed)))
+    (reverse models-processed)))
 
 ;;;; Backend interface
 (defun gptel-get-backend (name)
@@ -1268,7 +1268,7 @@ SCHEMA can be specified in several ways:
                             `(,(intern (concat ":" prop))
                               (:type ,type ,@(when desc
                                                (list :description (string-trim desc))))))
-                          (nreverse props) (nreverse types) (nreverse descriptions)))))
+                          (reverse props) (reverse types) (reverse descriptions)))))
               (setq schema
                     (if wrap-in-array (list :type "array" :items object) object))))))))
   ;; The OpenAI and Anthropic APIs don't allow arrays at the root of the schema.
@@ -2444,7 +2444,7 @@ for inclusion into the user prompt for the gptel request."
               (message "Ignoring unsupported binary file \"%s\"." path)))))))
     (unless (= from-pt end)
       (push (list :text (buffer-substring-no-properties from-pt end)) parts))
-    (nreverse parts)))
+    (reverse parts)))
 
 (cl-defgeneric gptel--inject-media (backend _prompts)
   "Wrap the last prompt in PROMPTS with gptel's context.
