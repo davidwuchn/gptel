@@ -407,7 +407,7 @@ This hook runs in gptel chat buffers after making a change to gptel's
 configuration that might require a UI update.")
 
 (defvar-local gptel--bounds nil)
-(put 'gptel--bounds 'safe-local-variable #'always)
+(put 'gptel--bounds 'safe-local-variable #'listp)
 
 (defvar gptel--preset nil
   "Name of last applied gptel preset.
@@ -420,14 +420,14 @@ For internal use only.")
 
 Note: Changing this variable does not affect gptel\\='s behavior
 in any way.")
-(put 'gptel--tool-names 'safe-local-variable #'always)
+(put 'gptel--tool-names 'safe-local-variable #'listp)
 
 (defvar-local gptel--backend-name nil
   "Store to persist backend name across Emacs sessions.
 
 Note: Changing this variable does not affect gptel\\='s behavior
 in any way.")
-(put 'gptel--backend-name 'safe-local-variable #'always)
+(put 'gptel--backend-name 'safe-local-variable #'stringp)
 
 (defvar-local gptel--old-header-line nil)
 
@@ -1180,7 +1180,7 @@ See `gptel-request--transitions' for details.")
   `((WAIT ,#'gptel--handle-wait ,#'gptel--update-wait)
     (TYPE ,#'gptel--handle-pre-insert)
     (ERRS ,#'gptel--handle-error ,#'gptel--fsm-last)
-    (TPRE ,#'gptel--handle-pre-tool)
+    (TPRE ,#'gptel--handle-pre-tool ,#'gptel--fsm-transition)
     (TOOL ,#'gptel--update-tool-call ,#'gptel--handle-tool-use
           ,#'gptel--update-tool-ask)
     (TRET ,#'gptel--handle-post-tool ,#'gptel--handle-tool-result)
@@ -1463,8 +1463,7 @@ Perform UI updates and run post-response hooks."
                          (gptel--process-tool-call
                           fsm (cl-find-if (lambda (ts) (equal (gptel-tool-name ts) name))
                                           (plist-get info :tools))
-                          tool-call result)))))))))))))
-  (gptel--fsm-transition fsm))
+                          tool-call result))))))))))))))
 
 (defun gptel--handle-post-tool (fsm)
   "Run `gptel-post-tool-call-functions for FSM."
