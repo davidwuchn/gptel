@@ -92,7 +92,7 @@ of Org."
                   (throw :--first-match rtn)
                 (when rtn (push rtn acc))))
             (setq up (org-element-parent up)))
-          (nreverse acc)))))
+          (reverse acc)))))
   (if (fboundp 'org-element-begin)
       (progn (declare-function org-element-begin "org-element")
              (declare-function org-element-end "org-element")
@@ -458,7 +458,7 @@ for inclusion into the user prompt for the gptel request."
               (message "Ignoring unsupported binary file \"%s\"." path))))))
       (unless (= from-pt end)
         (push (list :text (buffer-substring-no-properties from-pt end)) parts)))
-    (nreverse parts)))
+    (reverse parts)))
 
 (defun gptel-org--annotate-links (beg end)
   "Annotate Org links whose sources will be sent with `gptel-send'.
