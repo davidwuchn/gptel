@@ -673,7 +673,7 @@ send in queries.  (See `gptel--num-messages-to-send' for the last one.)"
                            (offset (caadar bounds))
                            (offset-marker (set-marker (make-marker) offset)))
                  (org-entry-put (point-min) "GPTEL_BOUNDS"
-                                (prin1-to-string (gptel--get-buffer-bounds)))
+                                (prin1-to-string bounds))
                  (when (and (not (= (marker-position offset-marker) offset))
                             (> attempts 0))
                    (funcall write-bounds (1- attempts)))))))
