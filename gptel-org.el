@@ -524,34 +524,38 @@ ARGS are the original function call arguments."
 ;;; Saving and restoring state
 (defun gptel-org--entry-properties (&optional pt)
   "Find gptel configuration properties stored at PT."
-  (pcase-let
-      ((`(,preset ,system ,backend ,model ,temperature ,tokens ,num ,tools)
-         (mapcar
-          (lambda (prop) (org-entry-get (or pt (point)) prop 'selective))
-          '("GPTEL_PRESET" "GPTEL_SYSTEM" "GPTEL_BACKEND"
-            "GPTEL_MODEL" "GPTEL_TEMPERATURE" "GPTEL_MAX_TOKENS"
-            "GPTEL_NUM_MESSAGES_TO_SEND" "GPTEL_TOOLS"))))
-    (when preset (setq preset (gptel--intern preset)))
-    (when system
-      (setq system (string-replace "\\n" "\n" system)))
-    (when backend
-      (setq backend (alist-get backend gptel--known-backends
-                               nil nil #'equal)))
-    (when model (setq model (gptel--intern model)))
-    (when temperature
-      (setq temperature (gptel--to-number temperature)))
-    (when tokens (setq tokens (gptel--to-number tokens)))
-    (when num (setq num (gptel--to-number num)))
-    (when tools
-      (setq tools (cl-loop
-                   for tname in (split-string tools)
-                   for tool = (with-demoted-errors "gptel: %S"
-                                (gptel-get-tool tname))
-                   if tool collect tool else do
-                   (display-warning
-                    '(gptel org tools)
-                    (format "Tool %s not found, ignoring" tname)))))
-    (list preset system backend model temperature tokens num tools)))
+  (let ((pos (or pt (point))))
+    (unless (and (number-or-marker-p pos)
+                 (<= (point-min) pos (point-max)))
+      (setq pos (point-min)))
+    (pcase-let
+        ((`(,preset ,system ,backend ,model ,temperature ,tokens ,num ,tools)
+           (mapcar
+            (lambda (prop) (org-entry-get pos prop 'selective))
+            '("GPTEL_PRESET" "GPTEL_SYSTEM" "GPTEL_BACKEND"
+              "GPTEL_MODEL" "GPTEL_TEMPERATURE" "GPTEL_MAX_TOKENS"
+              "GPTEL_NUM_MESSAGES_TO_SEND" "GPTEL_TOOLS"))))
+      (when preset (setq preset (gptel--intern preset)))
+      (when (stringp system)
+        (setq system (string-replace "\\n" "\n" system)))
+      (when backend
+        (setq backend (alist-get backend gptel--known-backends
+                                 nil nil #'equal)))
+      (when model (setq model (gptel--intern model)))
+      (when temperature
+        (setq temperature (gptel--to-number temperature)))
+      (when tokens (setq tokens (gptel--to-number tokens)))
+      (when num (setq num (gptel--to-number num)))
+      (when (stringp tools)
+        (setq tools (cl-loop
+                     for tname in (split-string tools)
+                     for tool = (with-demoted-errors "gptel: %S"
+                                  (gptel-get-tool tname))
+                     if tool collect tool else do
+                     (display-warning
+                      '(gptel org tools)
+                      (format "Tool %s not found, ignoring" tname)))))
+      (list preset system backend model temperature tokens num tools))))
 
 (defun gptel-org--restore-state ()
   "Restore gptel state for Org buffers when turning on `gptel-mode'."
