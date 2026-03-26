@@ -543,9 +543,14 @@ ARGS are the original function call arguments."
                                  nil nil #'equal)))
       (when model (setq model (gptel--intern model)))
       (when temperature
-        (setq temperature (gptel--to-number temperature)))
-      (when tokens (setq tokens (gptel--to-number tokens)))
-      (when num (setq num (gptel--to-number num)))
+        (let ((temp-val (gptel--to-number temperature)))
+          (when (numberp temp-val) (setq temperature temp-val))))
+      (when tokens
+        (let ((tokens-val (gptel--to-number tokens)))
+          (when (numberp tokens-val) (setq tokens tokens-val))))
+      (when num
+        (let ((num-val (gptel--to-number num)))
+          (when (numberp num-val) (setq num num-val))))
       (when (stringp tools)
         (setq tools (cl-loop
                      for tname in (split-string tools)
