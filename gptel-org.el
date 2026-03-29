@@ -360,23 +360,18 @@ contents."
     (goto-char (point-max))
     (let ((prev-pt (point)))
       (while (> prev-pt (point-min))
-        (goto-char
-         (previous-single-char-property-change (point) 'gptel))
-        (let ((prop (get-text-property (point) 'gptel))
-              (backward-progress (point)))
+        (goto-char (previous-single-char-property-change (point) 'gptel))
+        (let* ((prop (get-text-property (point) 'gptel))
+               (region-start (point))
+               (region-end prev-pt))
           (when (eq (car-safe prop) 'tool)
             ;; User edits to clean up can potentially insert a tool-call header
             ;; that is propertized.  Tool call headers should not be
             ;; propertized.
             (when (looking-at-p "[[:space:]]*#\\+begin_tool")
-              (goto-char (match-end 0)))
-            ;; TODO this code is able to put the point behind prev-pt, which
-            ;; makes the region inverted.  The `max' catches this, but really
-            ;; `read' and `looking-at' are the culprits.  Badly formed tool
-            ;; blocks can lead to this being necessary.
-            (org-unescape-code-in-region
-             (min prev-pt (point)) prev-pt))
-          (goto-char (setq prev-pt backward-progress)))))))
+              (setq region-start (match-end 0)))
+            (org-unescape-code-in-region region-start region-end))
+          (setq prev-pt region-start))))))
 
 (defun gptel-org--link-standalone-p (object)
   "Check if link OBJECT is on a line by itself."
