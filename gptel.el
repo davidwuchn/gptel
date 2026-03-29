@@ -995,7 +995,11 @@ context, tools, system prompt, model and more."
                                'mouse-face 'highlight)))
       (when face (setq button (propertize button 'face face)))
       (if gptel-use-header-line
-          (and (consp header-line-format) (setf (nth 1 header-line-format) button))
+          (progn
+            (unless (consp header-line-format)
+              (gptel-use-header-line))
+            (when (consp header-line-format)
+              (setf (nth 1 header-line-format) button)))
         (if (equal msg " Ready")
             (setq mode-line-process
                   `(:eval (concat " " (buttonize (gptel--model-name gptel-model)
