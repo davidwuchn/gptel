@@ -65,7 +65,6 @@
 (declare-function org-open-line "org")
 (declare-function org-at-heading-p "org")
 (declare-function org-get-heading "org")
-(declare-function org-at-heading-p "org")
 
 ;; Bundle `org-element-lineage-map' if it's not available (for Org 9.67 or older)
 (eval-and-compile
@@ -690,7 +689,9 @@ send in queries.  (See `gptel--num-messages-to-send' for the last one.)"
    (letrec ((write-bounds
              (lambda (attempts offset-marker)
                (let ((bounds (gptel--get-buffer-bounds)))
-                 (if bounds
+                 (if (and bounds
+                          (consp (car bounds))
+                          (consp (caar bounds)))
                      (let* ((offset (caadar bounds))
                             (new-marker (set-marker (make-marker) offset)))
                        (org-entry-put (point-min) "GPTEL_BOUNDS"
@@ -875,9 +876,6 @@ cleaning up after."
                 ;; Handle other chars: emphasis, bold and bullet items
                 ((and "**" (guard (not in-src-block)))
                  (cond
-                  ;; TODO Not sure why this branch was needed
-                  ;; ((looking-at "\\*\\(?:[[:word:]]\\|\s\\)") (delete-char 1))
-
                   ;; Looking back at "w**" or " **"
                   ((looking-back "\\(?:[[:word:][:punct:]\n]\\|\s\\)\\*\\{2\\}"
                                  (max (- (point) 3) (point-min)))
