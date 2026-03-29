@@ -508,12 +508,12 @@ To set the model for a chat session interactively call
 `gptel-send' with a prefix argument.")
   :safe #'always
   :type `(choice
-	  (symbol :tag "Specify model name")
-	  ,@(cl-loop
+	      (symbol :tag "Specify model name")
+	      ,@(cl-loop
              for (_name . backend) in gptel--known-backends
              append (mapcar
                      (lambda (model) (list 'const :tag (symbol-name model)
-			              model))
+			                               model))
                      (gptel-backend-models backend)))))
 
 (defvar gptel-expert-commands nil
@@ -791,28 +791,28 @@ when including context from these major modes.")
   "Pasre JSON string STR."
   (if (fboundp 'json-parse-string)
       `(json-parse-string ,str
-        :object-type 'plist
-        :null-object nil
-        :false-object :json-false)
+                          :object-type 'plist
+                          :null-object nil
+                          :false-object :json-false)
     (require 'json)
     (defvar json-object-type)
     (declare-function json-read-from-string "json" ())
     `(let ((json-object-type 'plist))
-      (json-read-from-string ,str))))
+       (json-read-from-string ,str))))
 
 (defmacro gptel--json-encode (object)
   "Serialize OBJECT as JSON."
   (if (fboundp 'json-serialize)
       `(json-serialize ,object
-        :null-object :null
-        :false-object :json-false)
+                       :null-object :null
+                       :false-object :json-false)
     (require 'json)
     (defvar json-false)
     (defvar json-null)
     (declare-function json-encode "json" (object))
     `(let ((json-false :json-false)
            (json-null  :null))
-      (json-encode ,object))))
+       (json-encode ,object))))
 
 (defun gptel--process-models (models)
   "Convert items in MODELS to symbols with appropriate properties."
@@ -844,8 +844,8 @@ Throw an error if there is no match."
 
 (gv-define-setter gptel-get-backend (val name)
   `(setf (alist-get ,name gptel--known-backends
-          nil t #'equal)
-    ,val))
+                    nil t #'equal)
+         ,val))
 
 (cl-defstruct
     (gptel-backend (:constructor gptel--make-backend)
@@ -924,14 +924,15 @@ Later plists in the sequence take precedence over earlier ones."
   ;; HACK Image files with ICC color profiles are characterized as ASCII
   ;; (#1223), so until we find a better solution we just match these files by
   ;; extension.
-  (or (string-match-p "\\.\\(jpe?g\\|png\\|gif\\|webp\\)\\'" path)
-      (condition-case nil
-          (with-temp-buffer
-            (insert-file-contents path nil 1 512 'replace)
-            (memq buffer-file-coding-system
-                  '(no-conversion no-conversion-multibyte)))
-        (file-missing (message "File \"%s\" is not readable." path)
-                      nil))))
+  (and path
+       (or (string-match-p "\\.\\(jpe?g\\|png\\|gif\\|webp\\)\\'" path)
+           (condition-case nil
+               (with-temp-buffer
+                 (insert-file-contents path nil 1 512 'replace)
+                 (memq buffer-file-coding-system
+                       '(no-conversion no-conversion-multibyte)))
+             (file-missing (message "File \"%s\" is not readable." path)
+                           nil)))))
 
 (defun gptel--insert-file-string (path)
   "Insert at point the contents of the file at PATH as context."
@@ -1611,7 +1612,7 @@ implementation, used by OpenAI-compatible APIs and Ollama."
                    (vconcat
                     (delq nil (mapcar
                                (lambda (arg) (and (not (plist-get arg :optional))
-                                             (plist-get arg :name)))
+                                                  (plist-get arg :name)))
                                (gptel-tool-args tool))))
                    :additionalProperties :json-false))
           (list :parameters (list :type "object" :properties nil))))))
@@ -2688,7 +2689,7 @@ If INCLUDE-HEADERS is non-nil, include headers with the -H option."
               (inhibit-message t)
               (temp-filename (make-temp-file "gptel-curl-data" nil ".json" data-json))
               (cleanup-fn (lambda (&rest _) (when (file-exists-p temp-filename)
-                                         (delete-file temp-filename)))))
+                                              (delete-file temp-filename)))))
          (plist-put info :post (cons cleanup-fn (plist-get info :post)))
          (list "--data-binary" (format "@%s" temp-filename))))
      (when (not (string-empty-p gptel-proxy))
@@ -2730,10 +2731,10 @@ the response is inserted into the current buffer after point."
         (set-buffer-multibyte nil)
         (set-process-coding-system process 'binary 'binary))
        (t
-	;; Don't try to convert cr-lf to cr on Windows so that curl's "header size
-	;; in bytes" stays correct. Explicitly set utf-8 for non-win systems too,
-	;; for cases when buffer coding system is not set to utf-8.
-	(set-process-coding-system process 'utf-8-unix 'utf-8-unix)))
+	    ;; Don't try to convert cr-lf to cr on Windows so that curl's "header size
+	    ;; in bytes" stays correct. Explicitly set utf-8 for non-win systems too,
+	    ;; for cases when buffer coding system is not set to utf-8.
+	    (set-process-coding-system process 'utf-8-unix 'utf-8-unix)))
       (set-process-query-on-exit-flag process nil)
       (let* ((gptel-backend backend) ;Required for header function's environment
              (gptel-model (plist-get info :model))
