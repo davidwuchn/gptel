@@ -529,7 +529,10 @@ ARGS are the original function call arguments."
 (defun gptel-org--to-number-safe (str)
   "Safely convert STR to a number.
 Return the number if STR can be converted, nil otherwise.
-Handles edge cases: nil, empty strings, whitespace-only strings."
+Handles edge cases: nil, empty strings, whitespace-only strings.
+TEST: (gptel-org--to-number-safe \"42\") => 42
+TEST: (gptel-org--to-number-safe \"\") => nil
+TEST: (gptel-org--to-number-safe nil) => nil"
   (when (and (stringp str) (not (string-empty-p (string-trim str))))
     (ignore-errors
       (let ((val (gptel--to-number str)))
@@ -548,6 +551,8 @@ Handles edge cases: nil, empty strings, whitespace-only strings."
            '("GPTEL_PRESET" "GPTEL_SYSTEM" "GPTEL_BACKEND"
              "GPTEL_MODEL" "GPTEL_TEMPERATURE" "GPTEL_MAX_TOKENS"
              "GPTEL_NUM_MESSAGES_TO_SEND" "GPTEL_TOOLS"))))
+      ;; ASSUMPTION: Property values are strings that need conversion
+      ;; BEHAVIOR: Convert each property type safely with appropriate validator
       (when preset (setq preset (gptel--intern preset)))
       (when (stringp system)
         (setq system (string-replace "\\n" "\n" system)))
@@ -555,12 +560,14 @@ Handles edge cases: nil, empty strings, whitespace-only strings."
         (setq backend (alist-get backend gptel--known-backends
                                  nil nil #'equal)))
       (when model (setq model (gptel--intern model)))
+      ;; EDGE CASE: Non-numeric strings return nil, preserving defaults
       (when-let* ((temp-val (gptel-org--to-number-safe temperature)))
         (setq temperature temp-val))
       (when-let* ((tokens-val (gptel-org--to-number-safe tokens)))
         (setq tokens tokens-val))
       (when-let* ((num-val (gptel-org--to-number-safe num)))
         (setq num num-val))
+      ;; TEST: Verify tools are loaded, warn if missing
       (when (stringp tools)
         (setq tools (cl-loop
                      for tname in (split-string tools)
@@ -573,7 +580,10 @@ Handles edge cases: nil, empty strings, whitespace-only strings."
       (list preset system backend model temperature tokens num tools))))
 
 (defun gptel-org--restore-state ()
-  "Restore gptel state for Org buffers when turning on `gptel-mode'."
+  "Restore gptel state for Org buffers when turning on `gptel-mode'.
+ASSUMPTION: State was previously saved with `gptel-org--save-state'
+EDGE CASE: Missing or corrupted properties handled gracefully
+TEST: Verify restoration message or error is displayed"
   (save-restriction
     (widen)
     (condition-case status
@@ -606,7 +616,8 @@ Handles edge cases: nil, empty strings, whitespace-only strings."
             (when num (setq-local gptel--num-messages-to-send num))
             (when tools (setq-local gptel-tools tools))))
       (:success (message "gptel chat restored."))
-      (error (message "Could not restore gptel state, sorry! Error: %s" status)))))
+      (error (message "Could not restore gptel state, sorry! Error: %s"
+                      (error-message-string status))))))
 
 (defun gptel-org-set-properties (pt &optional msg)
   "Store the active gptel configuration under the current heading.
