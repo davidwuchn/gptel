@@ -1102,11 +1102,18 @@ non-whitespace content on its line."
   "Encode FILE as a base64 string.
 
 FILE is assumed to exist and be a regular file."
-  (with-temp-buffer
-    (insert-file-contents-literally file)
-    (base64-encode-region (point-min) (point-max)
-                          :no-line-break)
-    (buffer-string)))
+  (cond
+   ((null file)
+    (error "gptel--base64-encode: FILE is nil"))
+   ((not (file-exists-p file))
+    (error "gptel--base64-encode: File does not exist: %s" file))
+   ((not (file-regular-p file))
+    (error "gptel--base64-encode: Not a regular file: %s" file))
+   (t (with-temp-buffer
+        (insert-file-contents-literally file)
+        (base64-encode-region (point-min) (point-max)
+                              :no-line-break)
+        (buffer-string)))))
 
 ;;;; Directive handling
 
