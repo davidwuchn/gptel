@@ -531,8 +531,9 @@ ARGS are the original function call arguments."
 Return the number if STR can be converted, nil otherwise.
 Handles edge cases: nil, empty strings, whitespace-only strings."
   (when (and (stringp str) (not (string-empty-p (string-trim str))))
-    (let ((val (gptel--to-number str)))
-      (when (and (numberp val) (finitep val)) val))))
+    (ignore-errors
+      (let ((val (gptel--to-number str)))
+        (when (and (numberp val) (finitep val)) val)))))
 
 (defun gptel-org--entry-properties (&optional pt)
   "Find gptel configuration properties stored at PT."
