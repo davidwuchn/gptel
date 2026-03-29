@@ -531,6 +531,14 @@ ARGS are the original function call arguments."
 
 
 ;;; Saving and restoring state
+(defun gptel-org--to-number-safe (str)
+  "Safely convert STR to a number.
+Return the number if STR can be converted, nil otherwise.
+Handles edge cases: nil, empty strings, whitespace-only strings."
+  (when (and (stringp str) (not (string-empty-p (string-trim str))))
+    (let ((val (gptel--to-number str)))
+      (when (and (numberp val) (finitep val)) val))))
+
 (defun gptel-org--entry-properties (&optional pt)
   "Find gptel configuration properties stored at PT."
   (let ((pos (or pt (point))))
@@ -551,15 +559,12 @@ ARGS are the original function call arguments."
         (setq backend (alist-get backend gptel--known-backends
                                  nil nil #'equal)))
       (when model (setq model (gptel--intern model)))
-      (when temperature
-        (let ((temp-val (gptel--to-number temperature)))
-          (when (numberp temp-val) (setq temperature temp-val))))
-      (when tokens
-        (let ((tokens-val (gptel--to-number tokens)))
-          (when (numberp tokens-val) (setq tokens tokens-val))))
-      (when num
-        (let ((num-val (gptel--to-number num)))
-          (when (numberp num-val) (setq num num-val))))
+      (when-let* ((temp-val (gptel-org--to-number-safe temperature)))
+        (setq temperature temp-val))
+      (when-let* ((tokens-val (gptel-org--to-number-safe tokens)))
+        (setq tokens tokens-val))
+      (when-let* ((num-val (gptel-org--to-number-safe num)))
+        (setq num num-val))
       (when (stringp tools)
         (setq tools (cl-loop
                      for tname in (split-string tools)
