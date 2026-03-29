@@ -681,17 +681,25 @@ send in queries.  (See `gptel--num-messages-to-send' for the last one.)"
    (gptel-org-set-properties (point-min))
    ;; Save response boundaries
    (letrec ((write-bounds
-             (lambda (attempts)
-               (when-let* ((bounds (gptel--get-buffer-bounds))
-                           ;; first value of ((prop . ((beg end val)...))...)
-                           (offset (caadar bounds))
-                           (offset-marker (set-marker (make-marker) offset)))
-                 (org-entry-put (point-min) "GPTEL_BOUNDS"
-                                (prin1-to-string bounds))
-                 (when (and (not (= (marker-position offset-marker) offset))
-                            (> attempts 0))
-                   (funcall write-bounds (1- attempts)))))))
-     (funcall write-bounds 6))))
+             (lambda (attempts offset-marker)
+               (let ((bounds (gptel--get-buffer-bounds)))
+                 (if bounds
+                     (let* ((offset (caadar bounds))
+                            (new-marker (set-marker (make-marker) offset)))
+                       (org-entry-put (point-min) "GPTEL_BOUNDS"
+                                      (prin1-to-string bounds))
+                       (when offset-marker
+                         (set-marker offset-marker nil))
+                       (when (and (not (= (marker-position new-marker) offset))
+                                  (> attempts 0))
+                         (funcall write-bounds (1- attempts) new-marker)))
+                   (when offset-marker
+                     (set-marker offset-marker nil))
+                   (when (= attempts 0)
+                     (display-warning
+                      '(gptel org)
+                      "Failed to save gptel bounds after multiple attempts")))))))
+     (funcall write-bounds 6 nil))))
 
 
 ;;; Transforming responses
