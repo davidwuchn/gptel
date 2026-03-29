@@ -353,8 +353,8 @@ some other way."
   :group 'gptel)
 
 (defcustom gptel-default-mode (if (fboundp 'markdown-mode)
-				  'markdown-mode
-				'text-mode)
+				                  'markdown-mode
+				                'text-mode)
   "The default major mode for dedicated chat buffers.
 
 If `markdown-mode' is available, it is used.  Otherwise gptel
@@ -388,8 +388,8 @@ Window' for details."
 
 (defcustom gptel-crowdsourced-prompts-file
   (let ((cache-dir (or (eval-when-compile
-			 (require 'xdg)
-			 (xdg-cache-home))
+			             (require 'xdg)
+			             (xdg-cache-home))
                        user-emacs-directory)))
     (expand-file-name "gptel-crowdsourced-prompts.csv" cache-dir))
   "File used to store crowdsourced system prompts.
@@ -508,16 +508,16 @@ Otherwise move ARG times, defaulting to 1."
                    #'text-property-search-backward))
          (goto-prefix-end
           (lambda () (when-let* ((prefix (gptel-prompt-prefix-string))
-                            ((not (string-empty-p prefix)))
-                            ((looking-at (concat "\n\\{1,2\\}"
-                                                 (regexp-quote prefix) "?"))))
-                  (goto-char (match-end 0)))))
+                                 ((not (string-empty-p prefix)))
+                                 ((looking-at (concat "\n\\{1,2\\}"
+                                                      (regexp-quote prefix) "?"))))
+                       (goto-char (match-end 0)))))
          (goto-prefix-beg
           (lambda () (when-let* ((prefix (gptel-response-prefix-string))
-                            ((not (string-empty-p prefix)))
-                            ((looking-back (concat (regexp-quote prefix) "?")
-                                           (point-min))))
-                  (goto-char (match-beginning 0))))))
+                                 ((not (string-empty-p prefix)))
+                                 ((looking-back (concat (regexp-quote prefix) "?")
+                                                (point-min))))
+                       (goto-char (match-beginning 0))))))
     (cond
      ((and end (> arg 0)) (goto-char end) (cl-decf arg) (funcall goto-prefix-end))
      ((and beg (< arg 0)) (goto-char beg) (cl-incf arg) (funcall goto-prefix-beg)))
@@ -637,7 +637,7 @@ Link failed to validate, see `gptel-markdown-validate-link' or `gptel-org-valida
   (let (prop)
     (save-excursion
       (when (text-property-search-forward
-                          'gptel 'response t)
+             'gptel 'response t)
         (when (setq prop (text-property-search-backward
                           'gptel 'response t))
           (cons (prop-match-beginning prop)
@@ -992,7 +992,7 @@ context, tools, system prompt, model and more."
   (when gptel-mode
     (let* ((inspect (lambda (&rest _) (gptel--inspect-fsm)))
            (button (propertize (buttonize msg inspect)
-                              'mouse-face 'highlight)))
+                               'mouse-face 'highlight)))
       (when face (setq button (propertize button 'face face)))
       (if gptel-use-header-line
           (and (consp header-line-format) (setf (nth 1 header-line-format) button))
@@ -1190,16 +1190,16 @@ See `gptel-request--handlers' for details.")
   "State machine for latest request in the buffer.")
 
 (defun gptel--fsm-last (fsm)
-    "Capture the latest request state FSM for introspection."
-    (let ((info (gptel-fsm-info fsm)))
-      (unless gptel-log-level
-        (let ((data (plist-get info :data)))
-          (dolist (key '(:messages :contents :query))
-            (setf (plist-get data key) nil))))
-      (setf (gptel-fsm-info fsm)
-            (plist-put info :end-time (current-time-string)))
-      (with-current-buffer (plist-get info :buffer)
-        (setq gptel--fsm-last fsm))))
+  "Capture the latest request state FSM for introspection."
+  (let ((info (gptel-fsm-info fsm)))
+    (unless gptel-log-level
+      (let ((data (plist-get info :data)))
+        (dolist (key '(:messages :contents :query))
+          (setf (plist-get data key) nil))))
+    (setf (gptel-fsm-info fsm)
+          (plist-put info :end-time (current-time-string)))
+    (with-current-buffer (plist-get info :buffer)
+      (setq gptel--fsm-last fsm))))
 
 (defun gptel--inspect-fsm (&optional fsm)
   "Inspect gptel request state FSM.
@@ -1223,11 +1223,11 @@ buffer."
     (let* ((pb (lambda (s) (propertize s 'face 'font-lock-builtin-face)))
            (ps (lambda (s) (propertize s 'face 'font-lock-string-face)))
            (fmt (lambda (s) (cond ((memq (car-safe s) '(closure lambda))
-                              (format "#<lambda %#x>" (sxhash s)))
-                             ((byte-code-function-p s)
-                              (format "#<compiled %#x>" (sxhash s)))
-                             ((stringp s) (string-replace "\n" "⮐ " s))
-                             (t (prin1-to-string s)))))
+                                   (format "#<lambda %#x>" (sxhash s)))
+                                  ((byte-code-function-p s)
+                                   (format "#<compiled %#x>" (sxhash s)))
+                                  ((stringp s) (string-replace "\n" "⮐ " s))
+                                  (t (prin1-to-string s)))))
            (inhibit-read-only t)
            (info (gptel-fsm-info fsm))
            (entries-info
@@ -1235,7 +1235,7 @@ buffer."
              for idx upfrom 3
              for (key val) on info by #'cddr
              unless (memq key '(:data :history :tools
-                                :partial_text :partial_json))
+                                      :partial_text :partial_json))
              collect
              (list idx `[,(funcall pb (symbol-name key))
                          ,(funcall ps (funcall fmt val))])))
@@ -1250,10 +1250,10 @@ buffer."
       (setq tabulated-list-entries
             (nconc (list `(2 [,(funcall pb ":state")
                               ,(funcall ps
-                                (mapconcat
-                                 fmt (reverse (cons (gptel-fsm-state fsm)
-                                               (plist-get info :history)))
-                                 " → "))]))
+                                        (mapconcat
+                                         fmt (reverse (cons (gptel-fsm-state fsm)
+                                                            (plist-get info :history)))
+                                         " → "))]))
                    entries-info
                    entries-data))
       (tabulated-list-print)
@@ -1330,17 +1330,7 @@ No state transition here since that's handled by the process sentinels."
                                     (gptel-prompt-prefix-string))))
           (gptel--update-status  " Ready" 'success))))
     ;; Run hook in visible window to set window-point, BUG #269
-    (if-let* ((gptel-window (get-buffer-window gptel-buffer 'visible)))
-        (with-selected-window gptel-window
-          (mapc (lambda (f) (funcall f info)) (plist-get info :post))
-          (run-hook-with-args
-           'gptel-post-response-functions
-           (marker-position start-marker) (marker-position tracking-marker)))
-      (with-current-buffer gptel-buffer
-        (mapc (lambda (f) (funcall f info)) (plist-get info :post))
-        (run-hook-with-args
-         'gptel-post-response-functions
-         (marker-position start-marker) (marker-position tracking-marker))))))
+    (gptel--run-post-response-hooks info)))
 
 (defun gptel--handle-error (fsm)
   "Check for errors in request state FSM.
@@ -1366,29 +1356,21 @@ Perform UI updates and run post-response hooks."
                      (string-trim (gptel--to-string error-msg)))
           (message "%s error: (%s) %s" backend-name status
                    (string-trim (gptel--to-string error-data)))))
-      (if-let* ((gptel-window (get-buffer-window gptel-buffer 'visible)))
-          (with-selected-window gptel-window
-            (mapc (lambda (f) (funcall f info)) (plist-get info :post))
-            (run-hook-with-args
-             'gptel-post-response-functions
-             (marker-position start-marker) (marker-position tracking-marker)))
-        (with-current-buffer gptel-buffer
-          (mapc (lambda (f) (funcall f info)) (plist-get info :post))
-          (run-hook-with-args
-           'gptel-post-response-functions
-           (marker-position start-marker) (marker-position tracking-marker))))
+      (gptel--run-post-response-hooks info)
       (with-current-buffer gptel-buffer
         (when gptel-mode
           (gptel--update-status
            (format " Error: %s" status) 'error))))))
 
-(defun gptel--handle-abort (fsm)
-  "Perform UI update on `gptel-abort' for FSM."
-  (when-let* ((info (gptel-fsm-info fsm))
-              (gptel-buffer (plist-get info :buffer))
-              (start-marker (plist-get info :position))
-              (tracking-marker (or (plist-get info :tracking-marker)
-                                   start-marker)))
+(defun gptel--run-post-response-hooks (info)
+  "Run post-response hooks for request INFO.
+
+INFO is a plist containing request state.  This function handles
+running hooks in the appropriate buffer/window context."
+  (let* ((gptel-buffer (plist-get info :buffer))
+         (start-marker (plist-get info :position))
+         (tracking-marker (or (plist-get info :tracking-marker)
+                              start-marker)))
     (if-let* ((gptel-window (get-buffer-window gptel-buffer 'visible)))
         (with-selected-window gptel-window
           (mapc (lambda (f) (funcall f info)) (plist-get info :post))
@@ -1399,7 +1381,16 @@ Perform UI updates and run post-response hooks."
         (mapc (lambda (f) (funcall f info)) (plist-get info :post))
         (run-hook-with-args
          'gptel-post-response-functions
-         (marker-position start-marker) (marker-position tracking-marker))))
+         (marker-position start-marker) (marker-position tracking-marker))))))
+
+(defun gptel--handle-abort (fsm)
+  "Perform UI update on `gptel-abort' for FSM."
+  (when-let* ((info (gptel-fsm-info fsm))
+              (gptel-buffer (plist-get info :buffer))
+              (start-marker (plist-get info :position))
+              (tracking-marker (or (plist-get info :tracking-marker)
+                                   start-marker)))
+    (gptel--run-post-response-hooks info)
     (with-current-buffer gptel-buffer
       (when gptel-mode (gptel--update-status  " Abort" 'error)))))
 
@@ -1721,7 +1712,7 @@ Optional RAW disables text properties and transformation."
                          "\n"))
                    (blocks (if (derived-mode-p 'org-mode)
                                `("#+begin_reasoning\n" . ,(concat "\n#+end_reasoning"
-                                                           gptel-response-separator))
+                                                                  gptel-response-separator))
                              ;; TODO(reasoning) remove properties and strip instead
                              (cons (propertize "``` reasoning\n" 'gptel 'ignore
                                                'keymap gptel--markdown-block-map)
@@ -1970,7 +1961,7 @@ USE-MINIBUFFER is non-nil)."
                  (backend-name (gptel-backend-name (plist-get info :backend)))
                  (tool-call-names
                   (mapconcat (lambda (c) (propertize (gptel-tool-name (car c))
-                                                'face 'font-lock-keyword-face))
+                                                     'face 'font-lock-keyword-face))
                              tool-calls ", "))
                  (len (length tool-calls))
                  (prompt (format "%s wants to run %s tool %s (%s). "
@@ -2256,7 +2247,7 @@ OV is the tool call dispatch overlay."
   (let ((call) (index)
         (read-error
          (lambda () (user-error
-                "Cannot read modified arguments, please check modifications")))
+                     "Cannot read modified arguments, please check modifications")))
         (apply-error
          (lambda () (message "Cannot apply argument modifications.  \
 This is a bug, please report it!"))))
@@ -2311,8 +2302,8 @@ This is a bug, please report it!"))))
   (interactive)
   (quit-window t)
   (apply #'gptel--reject-tool-calls
-   (thread-first (gptel-fsm-info gptel--fsm-last)
-                 (plist-get :tool-display))))
+         (thread-first (gptel-fsm-info gptel--fsm-last)
+                       (plist-get :tool-display))))
 
 (defun gptel--inspect-quit-tool-calls (&optional _)
   "Quit inspection window and return to query buffer."
@@ -2377,10 +2368,10 @@ TOOL-CALLS."
                for index =
                (cl-position-if
                 (lambda (call) (and (not (plist-get call :result))
-                               (string= (plist-get call :name) name)
-                               (null (cl-set-difference
-                                      (plist-get call :args) arg-plist
-                                      :test #'equal))))
+                                    (string= (plist-get call :name) name)
+                                    (null (cl-set-difference
+                                           (plist-get call :args) arg-plist
+                                           :test #'equal))))
                 tool-use)
                do (prin1 (list :name name :args arg-plist)
                          (current-buffer) '((length . nil) (level . nil)))
@@ -2539,24 +2530,24 @@ to registering the preset, elisp code to do the same is copied to the
          (read-string "Description (optional): ")))
   (let ((preset-code
          `(gptel-make-preset ',name
-           :description ,(when (and description
-                                (not (string-blank-p description)))
-                          description)
-           :backend ,(gptel-backend-name gptel-backend)
-           :model ',gptel-model
-           :system ,(if-let* ((directive (car-safe (rassoc gptel--system-message
-                                                    gptel-directives))))
+            :description ,(when (and description
+                                     (not (string-blank-p description)))
+                            description)
+            :backend ,(gptel-backend-name gptel-backend)
+            :model ',gptel-model
+            :system ,(if-let* ((directive (car-safe (rassoc gptel--system-message
+                                                            gptel-directives))))
                          `',directive
-                      gptel--system-message)
-           :tools ',(mapcar #'gptel-tool-name gptel-tools)
-           :stream ,gptel-stream
-           :temperature ,gptel-temperature
-           :max-tokens ,gptel-max-tokens
-           :use-context ',gptel-use-context
-           :track-media ,gptel-track-media
-           :include-reasoning ,(let ((reasoning gptel-include-reasoning))
-                                   (if (eq reasoning 'ignore)
-                                       ''ignore reasoning)))))
+                       gptel--system-message)
+            :tools ',(mapcar #'gptel-tool-name gptel-tools)
+            :stream ,gptel-stream
+            :temperature ,gptel-temperature
+            :max-tokens ,gptel-max-tokens
+            :use-context ',gptel-use-context
+            :track-media ,gptel-track-media
+            :include-reasoning ,(let ((reasoning gptel-include-reasoning))
+                                  (if (eq reasoning 'ignore)
+                                      ''ignore reasoning)))))
     (kill-new (pp-to-string preset-code))
     (eval preset-code)
     (message "Preset %s saved. (Lisp expression for preset saved to kill-ring)"
@@ -2796,9 +2787,9 @@ Add this to `completion-at-point-functions'."
                    :exclusive 'no
                    :annotation-function
                    #'(lambda (c) (thread-first
-                              (intern-soft c)
-                              (assq gptel--known-presets) (cdr)
-                              (plist-get :description)))))))))
+                                   (intern-soft c)
+                                   (assq gptel--known-presets) (cdr)
+                                   (plist-get :description)))))))))
 
 (defun gptel--prettify-preset ()
   "Get visual and completion help with presets in gptel buffers.
@@ -2808,9 +2799,9 @@ Intended to be added to `gptel-mode-hook'."
                     ;; subexp 0 here is not required, we retain it to make it
                     ;; easy to swtich to more complex patterns in the future
                     0 (when-let* ((comps (all-completions (match-string 1)
-                                          gptel--known-presets))
+                                                          gptel--known-presets))
                                   ((member (match-string 1) comps)))
-                       '(:box -1 :inherit secondary-selection))
+                        '(:box -1 :inherit secondary-selection))
                     prepend))))
     (cond
      (gptel-mode
@@ -2837,7 +2828,7 @@ against if required."
                   (add-text-properties
                    b e `(gptel-history
                          ,(append (ensure-list history)
-                           (get-char-property (1- e) 'gptel-history))
+                                  (get-char-property (1- e) 'gptel-history))
                          front-sticky (gptel gptel-history))))
                 (remove-hook 'gptel-post-response-functions
                              gptel--attach-after 'local))))
@@ -2920,9 +2911,9 @@ context for the ediff session."
        history (cons (buffer-substring-no-properties beg end)
                      (nbutlast history))))
     (add-text-properties
-             0 (length alt-response)
-             `(gptel response gptel-history ,history)
-             alt-response)
+     0 (length alt-response)
+     `(gptel response gptel-history ,history)
+     alt-response)
     (setq offset (min (- (point) beg) (1- (length alt-response))))
     (delete-region beg end)
     (insert alt-response)
