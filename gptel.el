@@ -1341,9 +1341,10 @@ No state transition here since that's handled by the process sentinels."
 
 Perform UI updates and run post-response hooks."
   (when-let* ((info (gptel-fsm-info fsm))
-              (error-data (plist-get info :error)))
+              (error-data (plist-get info :error))
+              (gptel-buffer (plist-get info :buffer))
+              ((buffer-live-p gptel-buffer)))
     (let* ((status (plist-get info :status))
-           (gptel-buffer (plist-get info :buffer))
            (start-marker (plist-get info :position))
            (tracking-marker (or (plist-get info :tracking-marker)
                                 start-marker))
@@ -1375,22 +1376,24 @@ running hooks in the appropriate buffer/window context."
          (start-marker (plist-get info :position))
          (tracking-marker (or (plist-get info :tracking-marker)
                               start-marker)))
-    (if-let* ((gptel-window (get-buffer-window gptel-buffer 'visible)))
-        (with-selected-window gptel-window
+    (when (buffer-live-p gptel-buffer)
+      (if-let* ((gptel-window (get-buffer-window gptel-buffer 'visible)))
+          (with-selected-window gptel-window
+            (mapc (lambda (f) (funcall f info)) (plist-get info :post))
+            (run-hook-with-args
+             'gptel-post-response-functions
+             (marker-position start-marker) (marker-position tracking-marker)))
+        (with-current-buffer gptel-buffer
           (mapc (lambda (f) (funcall f info)) (plist-get info :post))
           (run-hook-with-args
            'gptel-post-response-functions
-           (marker-position start-marker) (marker-position tracking-marker)))
-      (with-current-buffer gptel-buffer
-        (mapc (lambda (f) (funcall f info)) (plist-get info :post))
-        (run-hook-with-args
-         'gptel-post-response-functions
-         (marker-position start-marker) (marker-position tracking-marker))))))
+           (marker-position start-marker) (marker-position tracking-marker)))))))
 
 (defun gptel--handle-abort (fsm)
   "Perform UI update on `gptel-abort' for FSM."
   (when-let* ((info (gptel-fsm-info fsm))
               (gptel-buffer (plist-get info :buffer))
+              ((buffer-live-p gptel-buffer))
               (start-marker (plist-get info :position))
               (tracking-marker (or (plist-get info :tracking-marker)
                                    start-marker)))
@@ -1402,7 +1405,8 @@ running hooks in the appropriate buffer/window context."
   "Run `gptel-pre-tool-call-functions' for FSM."
   (let* ((info (gptel-fsm-info fsm))
          (buffer (plist-get info :buffer)))
-    (when (buffer-local-value 'gptel-pre-tool-call-functions buffer)
+    (when (and (buffer-live-p buffer)
+               (buffer-local-value 'gptel-pre-tool-call-functions buffer))
       ;; This function might run many times, so only act on the remaining tool calls.
       (let ((tool-use (cl-remove-if (lambda (tc) (plist-get tc :result))
                                     (plist-get info :tool-use)))
@@ -1462,7 +1466,8 @@ running hooks in the appropriate buffer/window context."
   "Run `gptel-post-tool-call-functions for FSM."
   (let* ((info (gptel-fsm-info fsm))
          (buffer (plist-get info :buffer)))
-    (when (buffer-local-value 'gptel-post-tool-call-functions buffer)
+    (when (and (buffer-live-p buffer)
+               (buffer-local-value 'gptel-post-tool-call-functions buffer))
       (let ((hook-func-args (list :buffer (buffer-name buffer)
                                   :backend (plist-get info :backend)
                                   :model (plist-get info :model))))
