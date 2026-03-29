@@ -1350,17 +1350,20 @@ Perform UI updates and run post-response hooks."
                                 start-marker))
            (backend-name
             (gptel-backend-name
-             (buffer-local-value 'gptel-backend gptel-buffer))))
-      (if (stringp error-data)
-          (message "%s error: (%s) %s" backend-name status (string-trim error-data))
-        (when-let* ((error-type (plist-get error-data :type)))
-          (setq status (concat "("  status ") "
-                               (string-trim (gptel--to-string error-type)))))
-        (if-let* ((error-msg (plist-get error-data :message)))
-            (message "%s error: (%s) %s" backend-name status
-                     (string-trim (gptel--to-string error-msg)))
-          (message "%s error: (%s) %s" backend-name status
-                   (string-trim (gptel--to-string error-data)))))
+             (buffer-local-value 'gptel-backend gptel-buffer)))
+           (error-msg
+            (cond
+             ((stringp error-data)
+              (string-trim error-data))
+             ((plist-get error-data :message))
+             (t (gptel--to-string error-data))))
+           (error-type
+            (and (not (stringp error-data))
+                 (plist-get error-data :type))))
+      (when error-type
+        (setq status (concat "("  status ") "
+                             (string-trim (gptel--to-string error-type)))))
+      (message "%s error: (%s) %s" backend-name status (string-trim error-msg))
       (gptel--run-post-response-hooks info)
       (with-current-buffer gptel-buffer
         (when gptel-mode
