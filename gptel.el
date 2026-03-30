@@ -1694,36 +1694,37 @@ Optional RAW disables text properties and transformation."
          (gptel-buffer (plist-get markers :gptel-buffer))
          (start-marker (plist-get markers :start-marker))
          (tracking-marker (plist-get markers :tracking-marker)))
-    (pcase response
-      ((pred stringp)                ;Response text
-       (with-current-buffer gptel-buffer
-         (when tracking-marker           ;separate from previous response
-           (setq response (concat gptel-response-separator response)))
-         (save-excursion
-           (with-current-buffer (marker-buffer start-marker)
-             (goto-char (or tracking-marker start-marker))
-             ;; (run-hooks 'gptel-pre-response-hook)
-             (unless (or (bobp) (plist-get info :in-place)
-                         tracking-marker)
-               (insert gptel-response-separator)
-               (when gptel-mode
-                 (insert (gptel-response-prefix-string)))
-               (move-marker start-marker (point)))
-             (unless raw
-               (when-let* ((transformer (plist-get info :transformer)))
-                 (setq response (funcall transformer response)))
-               (add-text-properties
-                0 (length response) '(gptel response front-sticky (gptel)) response))
-             (insert response)
-             (plist-put info :tracking-marker (setq tracking-marker (point-marker)))
-             ;; for uniformity with streaming responses
-             (set-marker-insertion-type tracking-marker t)))))
-      (`(reasoning . ,text)
-       (gptel--display-reasoning-stream text info))
-      (`(tool-call . ,tool-calls)
-       (gptel--display-tool-calls tool-calls info))
-      (`(tool-result . ,tool-results)
-       (gptel--display-tool-results tool-results info)))))
+    (when (buffer-live-p gptel-buffer)
+      (pcase response
+        ((pred stringp)                ;Response text
+         (with-current-buffer gptel-buffer
+           (when tracking-marker           ;separate from previous response
+             (setq response (concat gptel-response-separator response)))
+           (save-excursion
+             (with-current-buffer (marker-buffer start-marker)
+               (goto-char (or tracking-marker start-marker))
+               ;; (run-hooks 'gptel-pre-response-hook)
+               (unless (or (bobp) (plist-get info :in-place)
+                           tracking-marker)
+                 (insert gptel-response-separator)
+                 (when gptel-mode
+                   (insert (gptel-response-prefix-string)))
+                 (move-marker start-marker (point)))
+               (unless raw
+                 (when-let* ((transformer (plist-get info :transformer)))
+                   (setq response (funcall transformer response)))
+                 (add-text-properties
+                  0 (length response) '(gptel response front-sticky (gptel)) response))
+               (insert response)
+               (plist-put info :tracking-marker (setq tracking-marker (point-marker)))
+               ;; for uniformity with streaming responses
+               (set-marker-insertion-type tracking-marker t))))
+        (`(reasoning . ,text)
+         (gptel--display-reasoning-stream text info))
+        (`(tool-call . ,tool-calls)
+         (gptel--display-tool-calls tool-calls info))
+        (`(tool-result . ,tool-results)
+         (gptel--display-tool-results tool-results info))))))
 
 (defun gptel-curl--stream-insert-response (response info &optional raw)
   "Insert streaming RESPONSE from an LLM into the gptel buffer.
