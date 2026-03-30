@@ -1332,7 +1332,6 @@ Indicate gptel status, pulse the inserted text and run post-response hooks.
 No state transition here since that's handled by the process sentinels."
   (let* ((info (gptel-fsm-info fsm))
          (markers (gptel--get-markers info))
-         (start-marker (plist-get markers :start-marker))
          (tracking-marker (plist-get markers :tracking-marker))
          (gptel-buffer (plist-get markers :gptel-buffer)))
     (with-current-buffer gptel-buffer
@@ -1356,10 +1355,7 @@ Perform UI updates and run post-response hooks."
               (error-data (plist-get info :error))
               (gptel-buffer (plist-get info :buffer))
               ((buffer-live-p gptel-buffer)))
-    (let* ((markers (gptel--get-markers info))
-           (start-marker (plist-get markers :start-marker))
-           (tracking-marker (plist-get markers :tracking-marker))
-           (status (plist-get info :status))
+    (let* ((status (plist-get info :status))
            (backend-name
             (gptel-backend-name
              (buffer-local-value 'gptel-backend gptel-buffer)))
@@ -1409,12 +1405,9 @@ running hooks in the appropriate buffer/window context."
   (when-let* ((info (gptel-fsm-info fsm))
               (gptel-buffer (plist-get info :buffer))
               ((buffer-live-p gptel-buffer)))
-    (let* ((markers (gptel--get-markers info))
-           (start-marker (plist-get markers :start-marker))
-           (tracking-marker (plist-get markers :tracking-marker)))
-      (gptel--run-post-response-hooks info)
-      (with-current-buffer gptel-buffer
-        (when gptel-mode (gptel--update-status  " Abort" 'error))))))
+    (gptel--run-post-response-hooks info)
+    (with-current-buffer gptel-buffer
+      (when gptel-mode (gptel--update-status  " Abort" 'error)))))
 
 (defun gptel--handle-pre-tool (fsm)
   "Run `gptel-pre-tool-call-functions' for FSM."
