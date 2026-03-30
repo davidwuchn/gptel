@@ -1885,13 +1885,16 @@ call.  The argument list is suitable for supplying to the tool function."
 
 Inject tool results into into the prompt data (for the LLM), run the
 callback (for the user), and transition the request state."
-  (let ((info (gptel-fsm-info fsm)))
+  (let* ((info (gptel-fsm-info fsm))
+         (backend (plist-get info :backend))
+         (data (plist-get info :data))
+         (tool-use (plist-get info :tool-use))
+         (callback (plist-get info :callback))
+         (tool-result (plist-get info :tool-result)))
     (gptel--inject-prompt
-     (plist-get info :backend) (plist-get info :data)
-     (gptel--parse-tool-results (plist-get info :backend)
-                                (plist-get info :tool-use)))
-    (funcall (plist-get info :callback)
-             (cons 'tool-result (plist-get info :tool-result)) info))
+     backend data
+     (gptel--parse-tool-results backend tool-use))
+    (funcall callback (cons 'tool-result tool-result) info))
   (gptel--fsm-transition fsm))
 
 (defun gptel--handle-post (fsm)
