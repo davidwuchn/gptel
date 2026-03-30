@@ -911,11 +911,10 @@ and \"apikey\" as USER."
     (string (intern s))))
 
 (defun gptel--merge-plists (&rest plists)
-  "Merge PLISTS, altering the first one.
+  "Merge PLISTS, returning a new plist without altering arguments.
 
 Later plists in the sequence take precedence over earlier ones."
-  (let (;; (rtn (copy-sequence (pop plists)))
-        (rtn (pop plists))
+  (let ((rtn (copy-sequence (pop plists)))
         p v ls)
     (while plists
       (setq ls (pop plists))
