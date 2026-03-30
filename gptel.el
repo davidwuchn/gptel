@@ -1334,16 +1334,17 @@ No state transition here since that's handled by the process sentinels."
          (markers (gptel--get-markers info))
          (tracking-marker (plist-get markers :tracking-marker))
          (gptel-buffer (plist-get markers :gptel-buffer)))
-    (with-current-buffer gptel-buffer
-      (if (not tracking-marker)         ;Empty response
-          (when gptel-mode (gptel--update-status " Empty response" 'success))
-        (set-marker-insertion-type tracking-marker nil) ;Lock tracking-marker
-        (when gptel-mode
-          (unless (plist-get info :in-place)
-            (save-excursion (goto-char tracking-marker)
-                            (insert gptel-response-separator
-                                    (gptel-prompt-prefix-string))))
-          (gptel--update-status  " Ready" 'success))))
+    (when (buffer-live-p gptel-buffer)
+      (with-current-buffer gptel-buffer
+        (if (not tracking-marker)         ;Empty response
+            (when gptel-mode (gptel--update-status " Empty response" 'success))
+          (set-marker-insertion-type tracking-marker nil) ;Lock tracking-marker
+          (when gptel-mode
+            (unless (plist-get info :in-place)
+              (save-excursion (goto-char tracking-marker)
+                              (insert gptel-response-separator
+                                      (gptel-prompt-prefix-string))))
+            (gptel--update-status  " Ready" 'success)))))
     ;; Run hook in visible window to set window-point, BUG #269
     (gptel--run-post-response-hooks info)))
 
