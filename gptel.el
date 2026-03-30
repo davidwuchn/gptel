@@ -1276,6 +1276,19 @@ buffer."
 ;; The next few functions are default state handlers for gptel-send, see
 ;; `gptel-send--handlers'.
 
+(defun gptel--get-markers (info)
+  "Extract common marker values from INFO plist.
+
+Returns a plist with :start-marker, :tracking-marker, and :gptel-buffer.
+TRACKING-MARKER defaults to START-MARKER if not set in INFO."
+  (let* ((start-marker (plist-get info :position))
+         (tracking-marker (or (plist-get info :tracking-marker)
+                              start-marker))
+         (gptel-buffer (marker-buffer start-marker)))
+    (list :start-marker start-marker
+          :tracking-marker tracking-marker
+          :gptel-buffer gptel-buffer)))
+
 (defun gptel--handle-pre-insert (fsm)
   "Tasks before inserting the LLM response for state FSM.
 
@@ -1318,11 +1331,10 @@ Indicate gptel status, pulse the inserted text and run post-response hooks.
 
 No state transition here since that's handled by the process sentinels."
   (let* ((info (gptel-fsm-info fsm))
-         (start-marker (plist-get info :position))
-         (tracking-marker (or (plist-get info :tracking-marker)
-                              start-marker))
-         ;; start-marker may have been moved if :buffer was read-only
-         (gptel-buffer (marker-buffer start-marker)))
+         (markers (gptel--get-markers info))
+         (start-marker (plist-get markers :start-marker))
+         (tracking-marker (plist-get markers :tracking-marker))
+         (gptel-buffer (plist-get markers :gptel-buffer)))
     (with-current-buffer gptel-buffer
       (if (not tracking-marker)         ;Empty response
           (when gptel-mode (gptel--update-status " Empty response" 'success))
@@ -1344,10 +1356,10 @@ Perform UI updates and run post-response hooks."
               (error-data (plist-get info :error))
               (gptel-buffer (plist-get info :buffer))
               ((buffer-live-p gptel-buffer)))
-    (let* ((status (plist-get info :status))
-           (start-marker (plist-get info :position))
-           (tracking-marker (or (plist-get info :tracking-marker)
-                                start-marker))
+    (let* ((markers (gptel--get-markers info))
+           (start-marker (plist-get markers :start-marker))
+           (tracking-marker (plist-get markers :tracking-marker))
+           (status (plist-get info :status))
            (backend-name
             (gptel-backend-name
              (buffer-local-value 'gptel-backend gptel-buffer)))
@@ -1375,10 +1387,10 @@ Perform UI updates and run post-response hooks."
 
 INFO is a plist containing request state.  This function handles
 running hooks in the appropriate buffer/window context."
-  (let* ((gptel-buffer (plist-get info :buffer))
-         (start-marker (plist-get info :position))
-         (tracking-marker (or (plist-get info :tracking-marker)
-                              start-marker)))
+  (let* ((markers (gptel--get-markers info))
+         (gptel-buffer (plist-get markers :gptel-buffer))
+         (start-marker (plist-get markers :start-marker))
+         (tracking-marker (plist-get markers :tracking-marker)))
     (when (buffer-live-p gptel-buffer)
       (if-let* ((gptel-window (get-buffer-window gptel-buffer 'visible)))
           (with-selected-window gptel-window
@@ -1396,13 +1408,13 @@ running hooks in the appropriate buffer/window context."
   "Perform UI update on `gptel-abort' for FSM."
   (when-let* ((info (gptel-fsm-info fsm))
               (gptel-buffer (plist-get info :buffer))
-              ((buffer-live-p gptel-buffer))
-              (start-marker (plist-get info :position))
-              (tracking-marker (or (plist-get info :tracking-marker)
-                                   start-marker)))
-    (gptel--run-post-response-hooks info)
-    (with-current-buffer gptel-buffer
-      (when gptel-mode (gptel--update-status  " Abort" 'error)))))
+              ((buffer-live-p gptel-buffer)))
+    (let* ((markers (gptel--get-markers info))
+           (start-marker (plist-get markers :start-marker))
+           (tracking-marker (plist-get markers :tracking-marker)))
+      (gptel--run-post-response-hooks info)
+      (with-current-buffer gptel-buffer
+        (when gptel-mode (gptel--update-status  " Abort" 'error))))))
 
 (defun gptel--handle-pre-tool (fsm)
   "Run `gptel-pre-tool-call-functions' for FSM."
@@ -1684,9 +1696,10 @@ INFO is a plist containing information relevant to this buffer.
 See `gptel--url-get-response' for details.
 
 Optional RAW disables text properties and transformation."
-  (let* ((gptel-buffer (plist-get info :buffer))
-         (start-marker (plist-get info :position))
-         (tracking-marker (plist-get info :tracking-marker)))
+  (let* ((markers (gptel--get-markers info))
+         (gptel-buffer (plist-get markers :gptel-buffer))
+         (start-marker (plist-get markers :start-marker))
+         (tracking-marker (plist-get markers :tracking-marker)))
     (pcase response
       ((pred stringp)                ;Response text
        (with-current-buffer gptel-buffer
@@ -1712,42 +1725,7 @@ Optional RAW disables text properties and transformation."
              ;; for uniformity with streaming responses
              (set-marker-insertion-type tracking-marker t)))))
       (`(reasoning . ,text)
-       (when-let* ((include (plist-get info :include-reasoning)))
-         (if (stringp include)
-             (with-current-buffer (get-buffer-create
-                                   (plist-get info :include-reasoning))
-               (save-excursion (goto-char (point-max)) (insert text)))
-           (with-current-buffer (marker-buffer start-marker)
-             (let ((separator         ;Separate from response prefix if required
-                    (and (not tracking-marker) gptel-mode
-                         (not (string-suffix-p "\n" (gptel-response-prefix-string)))
-                         "\n"))
-                   (blocks (if (derived-mode-p 'org-mode)
-                               `("#+begin_reasoning\n" . ,(concat "\n#+end_reasoning"
-                                                                  gptel-response-separator))
-                             ;; TODO(reasoning) remove properties and strip instead
-                             (cons (propertize "``` reasoning\n" 'gptel 'ignore
-                                               'keymap gptel--markdown-block-map)
-                                   (concat (propertize "\n```" 'gptel 'ignore
-                                                       'keymap gptel--markdown-block-map)
-                                           gptel-response-separator)))))
-               (if (eq include 'ignore)
-                   (progn
-                     (add-text-properties
-                      0 (length text) '(gptel ignore front-sticky (gptel)) text)
-                     (gptel--insert-response
-                      (concat (car blocks) text (cdr blocks)) info t))
-                 (gptel--insert-response (concat separator (car blocks)) info t)
-                 (gptel--insert-response text info)
-                 (gptel--insert-response (cdr blocks) info t))
-               (save-excursion
-                 (goto-char (plist-get info :tracking-marker))
-                 (if (derived-mode-p 'org-mode) ;fold block
-                     (progn (search-backward "#+end_reasoning" start-marker t)
-                            (when (looking-at "^#\\+end_reasoning")
-                              (org-cycle)))
-                   (when (re-search-backward "^```" start-marker t)
-                     (gptel-markdown-cycle-block)))))))))
+       (gptel--display-reasoning-stream text info))
       (`(tool-call . ,tool-calls)
        (gptel--display-tool-calls tool-calls info))
       (`(tool-result . ,tool-results)
@@ -1762,9 +1740,10 @@ See `gptel--url-get-response' for details.
 Optional RAW disables text properties and transformation."
   (pcase response
     ((pred stringp)
-     (let ((start-marker (plist-get info :position))
-           (tracking-marker (plist-get info :tracking-marker))
-           (transformer (plist-get info :transformer)))
+     (let* ((markers (gptel--get-markers info))
+            (start-marker (plist-get markers :start-marker))
+            (tracking-marker (plist-get markers :tracking-marker))
+            (transformer (plist-get info :transformer)))
        (with-current-buffer (marker-buffer start-marker)
          (save-excursion
            (unless tracking-marker
