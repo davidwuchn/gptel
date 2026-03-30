@@ -876,14 +876,16 @@ and \"apikey\" as USER."
 ;; FIXME Should we utf-8 encode the api-key here?
 (defun gptel--get-api-key (&optional key)
   "Get api key from KEY, or from `gptel-api-key'."
-  (when-let* ((key-sym (or key (gptel-backend-key gptel-backend))))
-    (cl-typecase key-sym
-      (function (string-trim-right (funcall key-sym) "[\n\r]+"))
-      (string (string-trim-right key-sym "[\n\r]+"))
-      (symbol (if-let* ((val (symbol-value key-sym)))
-                  (gptel--get-api-key val)
-                (error "`gptel-api-key' is not valid")))
-      (t (error "`gptel-api-key' is not valid")))))
+  (let ((key-sym (or key (gptel-backend-key gptel-backend))))
+    (if (null key-sym)
+        (error "No API key configured: set `gptel-api-key' or :key in backend")
+      (cl-typecase key-sym
+        (function (string-trim-right (funcall key-sym) "[\n\r]+"))
+        (string (string-trim-right key-sym "[\n\r]+"))
+        (symbol (if-let* ((val (symbol-value key-sym)))
+                    (gptel--get-api-key val)
+                  (error "`gptel-api-key' is not valid")))
+        (t (error "`gptel-api-key' is not valid"))))))
 
 (defsubst gptel--to-number (val)
   "Ensure VAL is a number."
