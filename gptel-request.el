@@ -2876,6 +2876,7 @@ PROCESS and _STATUS are process parameters."
           (funcall (plist-get info :callback) nil info))))
       (gptel--fsm-transition fsm))      ; Move to next state
     (setf (alist-get process gptel--request-alist nil 'remove) nil)
+    (delete-process process)
     (kill-buffer proc-buf)))
 
 (defun gptel-curl--stream-filter (process output)
@@ -3024,6 +3025,7 @@ PROCESS and _STATUS are process parameters."
             (funcall proc-callback nil proc-info))))
       (gptel--fsm-transition fsm))      ;TYPE -> next
     (setf (alist-get process gptel--request-alist nil 'remove) nil)
+    (delete-process process)
     (kill-buffer proc-buf)))
 
 (defun gptel-curl--parse-response (proc-info)
