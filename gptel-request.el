@@ -2861,10 +2861,11 @@ PROCESS and _STATUS are process parameters."
                ((eq response 'json-read-error)
                 (plist-put info :error "Malformed JSON in response."))
                (t (plist-put info :error "Could not parse HTTP response."))))))
-        (with-demoted-errors "gptel callback error: %S"
-          (funcall (plist-get info :callback) nil info))))
-      (gptel--fsm-transition fsm))      ; Move to next state
+(with-demoted-errors "gptel callback error: %S"
+           (funcall (plist-get info :callback) nil info))))
+       (gptel--fsm-transition fsm))      ; Move to next state
     (setf (alist-get process gptel--request-alist nil 'remove) nil)
+    (delete-process process)
     (kill-buffer proc-buf)))
 
 (defun gptel-curl--stream-filter (process output)
@@ -3009,10 +3010,11 @@ PROCESS and _STATUS are process parameters."
                              exit-status))
           (plist-put proc-info :status "Curl failure")
           (gptel--fsm-transition fsm)   ;WAIT -> TYPE
-          (with-demoted-errors "gptel callback error: %S"
-            (funcall proc-callback nil proc-info))))
-      (gptel--fsm-transition fsm))      ;TYPE -> next
+(with-demoted-errors "gptel callback error: %S"
+             (funcall proc-callback nil proc-info))))
+       (gptel--fsm-transition fsm))      ;TYPE -> next
     (setf (alist-get process gptel--request-alist nil 'remove) nil)
+    (delete-process process)
     (kill-buffer proc-buf)))
 
 (defun gptel-curl--parse-response (proc-info)
