@@ -880,7 +880,10 @@ and \"apikey\" as USER."
     (if (null key-sym)
         (error "No API key configured: set `gptel-api-key' or :key in backend")
       (cl-typecase key-sym
-        (function (string-trim-right (funcall key-sym) "[\n\r]+"))
+        (function (let ((result (funcall key-sym)))
+                    (if (stringp result)
+                        (string-trim-right result "[\n\r]+")
+                      (error "API key function returned non-string: %S" result))))
         (string (string-trim-right key-sym "[\n\r]+"))
         (symbol (if-let* ((val (symbol-value key-sym)))
                     (gptel--get-api-key val)
