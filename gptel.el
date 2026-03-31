@@ -2146,7 +2146,7 @@ for tool call results.  INFO contains the state of the request."
 
 NAME and ARG-VALUES are the name and arguments for the call."
   (format "(%s %s)\n"
-          (propertize name 'font-lock-face 'font-lock-keyword-face)
+          (propertize (or name "unknown") 'font-lock-face 'font-lock-keyword-face)
           (propertize
            (mapconcat (lambda (arg)
                         (cond ((stringp arg)
