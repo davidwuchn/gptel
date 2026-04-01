@@ -1810,9 +1810,9 @@ This sets the variable `gptel-include-tool-results', which see."
                (list (buffer-substring-no-properties beg end))))
             (kill-region beg end))))
 
-      (when (and redirect-output gptel-buffer-name)
+      (when (and redirect-output buffer)
         (message (concat "Prompt sent to buffer: "
-                         (propertize gptel-buffer-name 'face 'help-key-binding)))
+                         (propertize (buffer-name buffer) 'face 'help-key-binding)))
         (display-buffer
          buffer '((display-buffer-reuse-window
                    display-buffer-pop-up-window)
