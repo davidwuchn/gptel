@@ -1718,7 +1718,7 @@ Optional RAW disables text properties and transformation."
                (insert response)
                (plist-put info :tracking-marker (setq tracking-marker (point-marker)))
                ;; for uniformity with streaming responses
-               (set-marker-insertion-type tracking-marker t))))
+               (set-marker-insertion-type tracking-marker t)))))
         (`(reasoning . ,text)
          (gptel--display-reasoning-stream text info))
         (`(tool-call . ,tool-calls)
