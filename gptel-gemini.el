@@ -181,8 +181,10 @@ list."
 (defun gptel--gemini-filter-schema (schema)
   "Destructively filter unsupported attributes from SCHEMA.
 
-Gemini's API does not support `additionalProperties'."
+Gemini's API does not support `additionalProperties' or gptel's internal
+`:optional' marker."
   (cl-remf schema :additionalProperties)
+  (cl-remf schema :optional)
   (when (plistp schema)
     (cl-loop for (key val) on schema by #'cddr
              do (cond
