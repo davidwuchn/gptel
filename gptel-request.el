@@ -819,6 +819,18 @@ when including context from these major modes.")
            (json-null  :null))
        (json-encode ,object))))
 
+(defun gptel--parse-tool-args (arguments)
+  "Parse tool ARGUMENTS JSON into a plist, or nil when malformed.
+
+Tool calls in gptel expect top-level object arguments that can be accessed
+with `plist-get'.  Some providers occasionally emit scalar JSON values or raw
+string payloads instead of an object.  Treat those as malformed so the tool
+pipeline can fail cleanly instead of crashing later while re-encoding or
+mapping the arguments."
+  (let ((parsed (ignore-errors (gptel--json-read-string arguments))))
+    (when (or (null parsed) (plistp parsed))
+      parsed)))
+
 (defmacro gptel--maybe-funcall (func-or-sym &rest args)
   "If FUNC-OR-SYM is a function, call it with ARGS.
 

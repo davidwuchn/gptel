@@ -123,11 +123,11 @@ information if the stream contains it."
                      for tool-call in tool-use ; Construct the call specs for running the function calls
                      for spec = (plist-get tool-call :function)
                      collect (list :id (plist-get tool-call :id)
-                                   :name (plist-get spec :name)
-                                   :args (ignore-errors (gptel--json-read-string
-                                                         (plist-get spec :arguments))))
-                     into call-specs
-                     finally (plist-put info :tool-use call-specs)))
+                                    :name (plist-get spec :name)
+                                    :args (gptel--parse-tool-args
+                                           (plist-get spec :arguments)))
+                      into call-specs
+                      finally (plist-put info :tool-use call-specs)))
                   ;; Update token usage if present
                   (when-let* ((last-resp (save-excursion
                                            (forward-line -1)

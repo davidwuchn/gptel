@@ -77,17 +77,16 @@ information if the stream contains it."
                               (cons delta (plist-get info :partial_json)))))
                 ;; Function call completed (user-defined tools)
                 ("response.output_item.done"
-                 (when-let* ((item (plist-get data :item))
-                             ((equal (plist-get item :type) "function_call"))
-                             (tool-call
-                              (list :id (plist-get item :call_id)
-                                    :name (plist-get item :name)
-                                    :args (ignore-errors
-                                            (gptel--json-read-string
-                                             (plist-get item :arguments))))))
-                   (plist-put info :tool-use
-                              (cons tool-call (plist-get info :tool-use)))
-                   (plist-put info :partial_json nil)))
+                  (when-let* ((item (plist-get data :item))
+                              ((equal (plist-get item :type) "function_call"))
+                              (tool-call
+                               (list :id (plist-get item :call_id)
+                                     :name (plist-get item :name)
+                                     :args (gptel--parse-tool-args
+                                            (plist-get item :arguments)))))
+                    (plist-put info :tool-use
+                               (cons tool-call (plist-get info :tool-use)))
+                    (plist-put info :partial_json nil)))
                 ;; Reasoning content
                 ((or "response.reasoning_summary_text.delta"
                      "response.reasoning.delta")
@@ -160,14 +159,13 @@ Mutate state INFO with response metadata."
            do (push (format "[Refused: %s]" (plist-get part :refusal))
                     content-strs))))
        ;; Function call from model (user-defined tools)
-       ("function_call"
-        (push item tool-calls)
-        (push (list :id (plist-get item :call_id)
-                    :name (plist-get item :name)
-                    :args (ignore-errors
-                            (gptel--json-read-string
-                             (plist-get item :arguments))))
-              tool-use))
+        ("function_call"
+         (push item tool-calls)
+         (push (list :id (plist-get item :call_id)
+                     :name (plist-get item :name)
+                     :args (gptel--parse-tool-args
+                            (plist-get item :arguments)))
+               tool-use))
        ;; Reasoning summary
        ("reasoning"
         (cl-loop with summary = (plist-get item :summary)
