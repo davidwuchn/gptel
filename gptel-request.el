@@ -2299,12 +2299,19 @@ Initiate the request when done."
     (unless (plist-get info :dry-run) (gptel--fsm-transition fsm))
     fsm))
 
+(defvar gptel--abort-call-depth 0
+  "Guard against recursive gptel-abort calls.")
+
 (defun gptel-abort (buf)
   "Stop any active gptel process associated with buffer BUF.
 
 BUF defaults to the current buffer."
   (interactive (list (current-buffer)))
-  (when-let* ((proc-attrs
+  (if (> gptel--abort-call-depth 20)
+      (message "[gptel] Abort recursion guard: depth=%d, dropping abort for %S"
+               gptel--abort-call-depth (buffer-name buf))
+    (let ((gptel--abort-call-depth (1+ gptel--abort-call-depth)))
+      (when-let* ((proc-attrs
                (cl-find-if
                 (lambda (entry)
                   ;; each entry has the form (PROC . (FSM ABORT-FN))
@@ -2325,7 +2332,7 @@ BUF defaults to the current buffer."
     (funcall abort-fn)
     (setf (alist-get proc gptel--request-alist nil 'remove) nil)
     (gptel--fsm-transition fsm 'ABRT)
-    (message "Stopped gptel request in buffer %S" (buffer-name buf))))
+    (message "Stopped gptel request in buffer %S" (buffer-name buf))))))
 
 
 ;;; Prompt creation
