@@ -2324,11 +2324,11 @@ BUF defaults to the current buffer."
               (fsm (cadr proc-attrs))
               (info (gptel-fsm-info fsm))
               (abort-fn (cddr proc-attrs)))
-    ;; Run :callback with abort signal
+    ;; Run :callback with abort signal (deferred to break recursion chains)
     (with-demoted-errors "Callback error: %S"
       (and-let* ((cb (plist-get info :callback))
                  ((functionp cb)))
-        (funcall cb 'abort info)))
+        (run-at-time 0 nil cb 'abort info)))
     (funcall abort-fn)
     (setf (alist-get proc gptel--request-alist nil 'remove) nil)
     (gptel--fsm-transition fsm 'ABRT)
