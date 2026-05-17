@@ -3030,11 +3030,23 @@ BACKEND is the LLM backend in use.
 PROC-INFO is a plist with process information and other context.
 See `gptel-curl--get-response' for its contents.")
 
+(defvar gptel-curl--sentinel-depth 0
+  "Guard against recursive sentinel invocations.")
+
 (defun gptel-curl--sentinel (process _status)
   "Process sentinel for gptel curl requests.
 
 PROCESS and _STATUS are process parameters."
-  (let ((proc-buf (process-buffer process)))
+  (if (> gptel-curl--sentinel-depth 10)
+      (progn
+        (message "[gptel] Sentinel recursion guard: depth=%d, dropping sentinel for %s"
+                 gptel-curl--sentinel-depth (process-name process))
+        (ignore-errors
+          (setf (alist-get process gptel--request-alist nil 'remove) nil)
+          (delete-process process)
+          (kill-buffer (process-buffer process))))
+    (let ((gptel-curl--sentinel-depth (1+ gptel-curl--sentinel-depth))
+          (proc-buf (process-buffer process)))
     (when-let* (((eq (process-status process) 'exit))
                 (fsm (car (alist-get process gptel--request-alist)))
                 (proc-info (gptel-fsm-info fsm))
@@ -3076,7 +3088,7 @@ PROCESS and _STATUS are process parameters."
       (gptel--fsm-transition fsm))      ;TYPE -> next
     (setf (alist-get process gptel--request-alist nil 'remove) nil)
     (delete-process process)
-    (kill-buffer proc-buf)))
+    (kill-buffer proc-buf))))
 
 (defun gptel-curl--parse-response (proc-info)
   "Parse the buffer BUF with curl's response.
