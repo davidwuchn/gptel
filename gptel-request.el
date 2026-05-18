@@ -1976,7 +1976,8 @@ callback (for the user), and transition the request state."
                position context dry-run
                (stream nil) (in-place nil)
                (system gptel--system-message)
-               schema transforms (fsm (gptel-make-fsm)))
+               schema transforms (fsm (gptel-make-fsm))
+               timeout)
   "Request a response from the `gptel-backend' for PROMPT.
 
 The request is asynchronous, this function returns immediately.
