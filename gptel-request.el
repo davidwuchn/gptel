@@ -3050,6 +3050,7 @@ PROCESS and _STATUS are process parameters."
         (message "[gptel] Sentinel recursion guard: depth=%d, dropping sentinel for %s"
                  gptel-curl--sentinel-depth (process-name process))
         (ignore-errors
+          (set-process-sentinel process #'ignore)
           (setf (alist-get process gptel--request-alist nil 'remove) nil)
           (delete-process process)
           (kill-buffer (process-buffer process))))
